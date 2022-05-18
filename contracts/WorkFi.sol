@@ -20,8 +20,8 @@ contract WorkFi is IWorkFi, YieldLogic {
  
         uint128 stablePay;
         uint128 nativePay;
-        uint96 nativePrice; // 1 NT price in stablecoin
-        ISuperfluidToken nativeToken; // NT contract address
+        uint96 exchangeRate; // Amount of native token 1 DAI can buy
+        ISuperfluidToken nativeToken;
 
         address worker;
         address recruiter;
@@ -60,17 +60,17 @@ contract WorkFi is IWorkFi, YieldLogic {
     function createBounty(
         uint128 stablePay, 
         uint128 nativePay, 
-        uint96 nativePrice, 
-        ISuperfluidToken nativeToken, 
+        uint96 exchangeRate, 
+        address nativeToken, 
         uint256 deadline
-    ) external {
+    ) external returns (uint32) {
 
         Bounty storage newBounty = bounties[totalBounties];
 
         newBounty.stablePay = stablePay;
         newBounty.nativePay = nativePay;
-        newBounty.nativePrice = nativePrice;
-        newBounty.nativeToken = nativeToken;
+        newBounty.exchangeRate = exchangeRate;
+        newBounty.nativeToken = ISuperfluidToken(nativeToken);
         newBounty.recruiter = msg.sender;
         newBounty.deadline = deadline;
 
@@ -80,26 +80,27 @@ contract WorkFi is IWorkFi, YieldLogic {
         idaLib.createIndex(FDAI, totalBounties);
         idaLib.updateSubscriptionUnits(FDAI, totalBounties, msg.sender, stablePay);
 
-        totalBounties++;
+        return totalBounties++;
     }
 
     function invest(uint32 bountyId, uint128 stableAmount) external {
 
-        Bounty storage bounty = bounties[bountyId];
+        Bounty storage b = bounties[bountyId];
 
         // 1. Transfer approved DAI
         ERC20(address(FDAI)).transferFrom(msg.sender, address(this), stableAmount);
 
-        uint128 investAmount = bounty.investors[msg.sender] + stableAmount;
+        uint128 investAmount = b.investors[msg.sender] + stableAmount;
 
         // 2. Update Superfluid indices
-        idaLib.updateSubscriptionUnits(bounty.nativeToken, bountyId, msg.sender, investAmount);
-        idaLib.updateSubscriptionUnits(FDAI, bountyId, msg.sender, investAmount / bounty.nativePrice);
+        idaLib.updateSubscriptionUnits(b.nativeToken, bountyId, msg.sender, investAmount);
+        idaLib.updateSubscriptionUnits(FDAI, bountyId, 
+            msg.sender, _stableToNative(stableAmount, b.exchangeRate));
 
         // 3. Update contract state
-        bounty.investors[msg.sender] = investAmount;
-        bounty.stablePay += stableAmount;
-        bounty.nativePay -= (stableAmount / bounty.nativePrice); // TODO: Test precision error
+        b.investors[msg.sender] = investAmount;
+        b.stablePay += stableAmount;
+        b.nativePay -= _stableToNative(stableAmount, b.exchangeRate); // TODO: Test precision error
 
     }
 
@@ -132,6 +133,10 @@ contract WorkFi is IWorkFi, YieldLogic {
         b.isClosed = true;
     }
 
+    function _stableToNative(uint128 stableAmount, uint96 exchangeRate) internal pure returns (uint128) {
+        return (stableAmount / 1 ether) * exchangeRate;
+    }
+
     function getInvestment(uint32 bountyId) external view returns (uint128) {
         return bounties[bountyId].investors[msg.sender];
     }
@@ -141,9 +146,9 @@ contract WorkFi is IWorkFi, YieldLogic {
 
         return BountyMetadata({
             stablePay: b.stablePay,
-            nativePay: b.nativePrice,
-            nativePrice: b.nativePrice, // 1 NT price in stablecoin
-            nativeToken: address(b.nativeToken), // NT contract address
+            nativePay: b.nativePay,
+            exchangeRate: b.exchangeRate,
+            nativeToken: address(b.nativeToken),
             worker: b.worker,
             recruiter: b.recruiter,
             isClosed: b.isClosed,
@@ -159,9 +164,9 @@ contract WorkFi is IWorkFi, YieldLogic {
 
             bountyArray[i] = BountyMetadata({
                 stablePay: b.stablePay,
-                nativePay: b.nativePrice,
-                nativePrice: b.nativePrice, // 1 NT price in stablecoin
-                nativeToken: address(b.nativeToken), // NT contract address
+                nativePay: b.nativePay,
+                exchangeRate: b.exchangeRate,
+                nativeToken: address(b.nativeToken),
                 worker: b.worker,
                 recruiter: b.recruiter,
                 isClosed: b.isClosed,

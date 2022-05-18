@@ -15,10 +15,12 @@ contract DummyWorkFi is IWorkFi {
     function createBounty(
         uint128 stablePay, 
         uint128 nativePay, 
-        uint96 nativePrice, 
-        ISuperfluidToken nativeToken, 
+        uint96 exchangeRate, 
+        address nativeToken, 
         uint256 deadline
-    ) external { }
+    ) external returns (uint32) { 
+        return 5;
+    }
 
     function invest(uint32 bountyId, uint128 stableAmount) external { }
 
@@ -37,7 +39,7 @@ contract DummyWorkFi is IWorkFi {
         return BountyMetadata({
             stablePay: 2000 * (10 ** 18),
             nativePay: 1000 * (10 ** 18),
-            nativePrice: 100,
+            exchangeRate: 1 ether,
             nativeToken: 0x96B82B65ACF7072eFEb00502F45757F254c2a0D4,
             worker: address(0),
             recruiter: address(1),
@@ -52,9 +54,9 @@ contract DummyWorkFi is IWorkFi {
 
         for (uint32 i = 0; i < 4; i++) {
             bountyArray[i] = BountyMetadata({
-                stablePay: i * 2000 * (10 ** 18),
-                nativePay: i * 1000 * (10 ** 18),
-                nativePrice: 100,
+                stablePay: i * 2000 ether,
+                nativePay: i * 1000 ether,
+                exchangeRate: 1 ether,
                 nativeToken: 0x96B82B65ACF7072eFEb00502F45757F254c2a0D4,
                 worker: address(0),
                 recruiter: address(1),
