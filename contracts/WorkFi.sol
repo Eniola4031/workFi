@@ -1,43 +1,34 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
+import "./IWorkFi.sol";
 import "./YieldLogic.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import {
-    ISuperfluid,
-    ISuperfluidToken
-} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
+import { ISuperfluid, ISuperfluidToken } 
+    from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
+import { IInstantDistributionAgreementV1 } 
+    from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IInstantDistributionAgreementV1.sol";
+import { IDAv1Library } 
+    from "@superfluid-finance/ethereum-contracts/contracts/apps/IDAv1Library.sol";
 
-import {
-    IInstantDistributionAgreementV1
-} from "@superfluid-finance/ethereum-contracts/contracts/interfaces/agreements/IInstantDistributionAgreementV1.sol";
-
-import {
-    IDAv1Library
-} from "@superfluid-finance/ethereum-contracts/contracts/apps/IDAv1Library.sol";
-
-contract WorkFi is YieldLogic {
+contract WorkFi is IWorkFi, YieldLogic {
 
     using IDAv1Library for IDAv1Library.InitData;
-    
-    struct Bounty {
 
+    struct Bounty {
+ 
         uint128 stablePay;
         uint128 nativePay;
-
         uint96 nativePrice; // 1 NT price in stablecoin
         ISuperfluidToken nativeToken; // NT contract address
 
         address worker;
         address recruiter;
-
         bool isClosed;
-
         uint256 deadline; // In seconds since Unix Epoch
 
         mapping(address => uint128) investors;
-
     }
 
     // Polygon Mumbai Addresses
@@ -117,28 +108,68 @@ contract WorkFi is YieldLogic {
     }
 
     function closeBounty(uint32 bountyId) external {
-        Bounty storage bounty = bounties[bountyId];
+        Bounty storage b = bounties[bountyId];
 
-        require(block.timestamp > bounty.deadline);
+        require(block.timestamp > b.deadline);
 
-        if(bounty.worker == address(0)) {
+        if(b.worker == address(0)) {
             _payBounty(bountyId);
             return;
         }
 
-        idaLib.distribute(FDAI, bountyId, bounty.stablePay);
-        bounty.isClosed = true;
+        idaLib.distribute(FDAI, bountyId, b.stablePay);
+        b.isClosed = true;
     }
 
     function _payBounty(uint32 bountyId) internal {
-        Bounty storage bounty = bounties[bountyId];
+        Bounty storage b = bounties[bountyId];
 
-        ERC20(address(FDAI)).transfer(msg.sender, bounty.stablePay);
+        ERC20(address(FDAI)).transfer(msg.sender, b.stablePay);
         
-        idaLib.updateSubscriptionUnits(bounty.nativeToken, bountyId, msg.sender, bounty.nativePay);
-        idaLib.distribute(bounty.nativeToken, bountyId, bounty.nativePay);
+        idaLib.updateSubscriptionUnits(b.nativeToken, bountyId, msg.sender, b.nativePay);
+        idaLib.distribute(b.nativeToken, bountyId, b.nativePay);
         
-        bounty.isClosed = true;
+        b.isClosed = true;
+    }
+
+    function getInvestment(uint32 bountyId) external view returns (uint128) {
+        return bounties[bountyId].investors[msg.sender];
+    }
+
+    function getBounty(uint32 bountyId) external view returns (BountyMetadata memory) {
+        Bounty storage b = bounties[bountyId];
+
+        return BountyMetadata({
+            stablePay: b.stablePay,
+            nativePay: b.nativePrice,
+            nativePrice: b.nativePrice, // 1 NT price in stablecoin
+            nativeToken: address(b.nativeToken), // NT contract address
+            worker: b.worker,
+            recruiter: b.recruiter,
+            isClosed: b.isClosed,
+            deadline: b.deadline
+        });
+    }
+
+    function getBounties() external view returns (BountyMetadata[] memory) {
+        BountyMetadata[] memory bountyArray = new BountyMetadata[](totalBounties);
+
+        for (uint32 i = 0; i < totalBounties; i++) {
+            Bounty storage b = bounties[i];
+
+            bountyArray[i] = BountyMetadata({
+                stablePay: b.stablePay,
+                nativePay: b.nativePrice,
+                nativePrice: b.nativePrice, // 1 NT price in stablecoin
+                nativeToken: address(b.nativeToken), // NT contract address
+                worker: b.worker,
+                recruiter: b.recruiter,
+                isClosed: b.isClosed,
+                deadline: b.deadline
+            });
+        }
+
+        return bountyArray;
     }
 
 }
