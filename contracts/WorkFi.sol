@@ -38,7 +38,8 @@ contract WorkFi is IWorkFi, YieldLogic {
             IInstantDistributionAgreementV1(0x804348D4960a61f2d5F9ce9103027A3E849E09b8)
     );
 
-    uint32 internal totalBounties;
+    uint32 internal totalCount; // Number of open bounties
+    uint32 internal closedCount; // Number of closed bounties
     mapping(uint32 => Bounty) public bounties;
 
     // Access Controls
@@ -52,9 +53,14 @@ contract WorkFi is IWorkFi, YieldLogic {
         _;
     }
 
-    function acceptWorker(uint32 bountyId, address worker) external onlyRecruiter(bountyId) {
+    function acceptWorker(
+        uint32 bountyId, 
+        address worker
+    ) external override onlyRecruiter(bountyId) {
+
         require(bounties[bountyId].worker == address(0), 'A worker has already been accepted');
         bounties[bountyId].worker = worker;
+
     }
 
     function createBounty(
@@ -63,9 +69,9 @@ contract WorkFi is IWorkFi, YieldLogic {
         uint96 exchangeRate, 
         address nativeToken, 
         uint256 deadline
-    ) external returns (uint32) {
+    ) external override returns (uint32) {
 
-        Bounty storage newBounty = bounties[totalBounties];
+        Bounty storage newBounty = bounties[totalCount];
 
         newBounty.stablePay = stablePay;
         newBounty.nativePay = nativePay;
@@ -77,13 +83,13 @@ contract WorkFi is IWorkFi, YieldLogic {
         ERC20(address(FDAI)).transfer(address(this), stablePay);
         ERC20(address(nativeToken)).transfer(address(this), nativePay);
 
-        idaLib.createIndex(FDAI, totalBounties);
-        idaLib.updateSubscriptionUnits(FDAI, totalBounties, msg.sender, stablePay);
+        idaLib.createIndex(FDAI, totalCount);
+        idaLib.updateSubscriptionUnits(FDAI, totalCount, msg.sender, stablePay);
 
-        return totalBounties++;
+        return totalCount++;
     }
 
-    function invest(uint32 bountyId, uint128 stableAmount) external {
+    function invest(uint32 bountyId, uint128 stableAmount) external override {
 
         Bounty storage b = bounties[bountyId];
 
@@ -104,11 +110,11 @@ contract WorkFi is IWorkFi, YieldLogic {
 
     }
 
-    function acceptPayment(uint32 bountyId) external onlyWorker(bountyId) {
+    function acceptPayment(uint32 bountyId) external override onlyWorker(bountyId) {
         _payBounty(bountyId);
     }
 
-    function closeBounty(uint32 bountyId) external {
+    function closeBounty(uint32 bountyId) external override {
         Bounty storage b = bounties[bountyId];
 
         require(block.timestamp > b.deadline);
@@ -137,11 +143,11 @@ contract WorkFi is IWorkFi, YieldLogic {
         return (stableAmount / 1 ether) * exchangeRate;
     }
 
-    function getInvestment(uint32 bountyId) external view returns (uint128) {
+    function getInvestment(uint32 bountyId) external view override returns (uint128) {
         return bounties[bountyId].investors[msg.sender];
     }
 
-    function getBounty(uint32 bountyId) external view returns (BountyMetadata memory) {
+    function getBounty(uint32 bountyId) external view override returns (BountyMetadata memory) {
         Bounty storage b = bounties[bountyId];
 
         return BountyMetadata({
@@ -156,25 +162,20 @@ contract WorkFi is IWorkFi, YieldLogic {
         });
     }
 
-    function getBounties() external view returns (BountyMetadata[] memory) {
-        BountyMetadata[] memory bountyArray = new BountyMetadata[](totalBounties);
+    function getOpenBounties() external view override returns (uint32[] memory) {
+        uint32 openCount = totalCount - closedCount;
+        uint32[] memory ids = new uint32[](openCount);
 
-        for (uint32 i = 0; i < totalBounties; i++) {
+        uint32 ctr = 0;
+        for (uint32 i = 0; i < totalCount; i++) {
             Bounty storage b = bounties[i];
 
-            bountyArray[i] = BountyMetadata({
-                stablePay: b.stablePay,
-                nativePay: b.nativePay,
-                exchangeRate: b.exchangeRate,
-                nativeToken: address(b.nativeToken),
-                worker: b.worker,
-                recruiter: b.recruiter,
-                isClosed: b.isClosed,
-                deadline: b.deadline
-            });
+            if (!b.isClosed) {
+                ids[ctr++] = i;
+            }
         }
 
-        return bountyArray;
+        return ids;
     }
 
 }

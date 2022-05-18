@@ -54,7 +54,7 @@ interface IWorkFi {
     /// Get information of a bounty.
     function getBounty(uint32 bountyId) external view returns (BountyMetadata memory);
 
-    /// Get information of all bounties.
-    function getBounties() external view returns (BountyMetadata[] memory);
+    /// Get IDs of all open bounties
+    function getOpenBounties() external view returns (uint32[] memory);
 
 }

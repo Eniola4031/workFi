@@ -10,7 +10,7 @@ import {
 
 contract DummyWorkFi is IWorkFi {
 
-    function acceptWorker(uint32 bountyId, address worker) external { }
+    function acceptWorker(uint32 bountyId, address worker) external override { }
 
     function createBounty(
         uint128 stablePay, 
@@ -18,23 +18,23 @@ contract DummyWorkFi is IWorkFi {
         uint96 exchangeRate, 
         address nativeToken, 
         uint256 deadline
-    ) external returns (uint32) { 
+    ) external override returns (uint32) { 
         return 5;
     }
 
-    function invest(uint32 bountyId, uint128 stableAmount) external { }
+    function invest(uint32 bountyId, uint128 stableAmount) external override { }
 
-    function acceptPayment(uint32 bountyId) external { }
+    function acceptPayment(uint32 bountyId) external override { }
 
-    function closeBounty(uint32 bountyId) external { }
+    function closeBounty(uint32 bountyId) external override { }
 
     /////////////////
     // VIEW FUNCTIONS
     /////////////////
 
-    function getInvestment(uint32 bountyId) external pure returns (uint128) { return 1000 * (10 ** 18); }
+    function getInvestment(uint32 bountyId) external pure override returns (uint128) { return 1000 * (10 ** 18); }
 
-    function getBounty(uint32 bountyId) external view returns (BountyMetadata memory) {
+    function getBounty(uint32 bountyId) external view override returns (BountyMetadata memory) {
 
         return BountyMetadata({
             stablePay: 2000 * (10 ** 18),
@@ -48,24 +48,14 @@ contract DummyWorkFi is IWorkFi {
         });
 
     }
-    function getBounties() external view returns (BountyMetadata[] memory) {
+    function getOpenBounties() external pure override returns (uint32[] memory) {
         
-        BountyMetadata[] memory bountyArray = new BountyMetadata[](4);
-
-        for (uint32 i = 0; i < 4; i++) {
-            bountyArray[i] = BountyMetadata({
-                stablePay: i * 2000 ether,
-                nativePay: i * 1000 ether,
-                exchangeRate: 1 ether,
-                nativeToken: 0x96B82B65ACF7072eFEb00502F45757F254c2a0D4,
-                worker: address(0),
-                recruiter: address(1),
-                isClosed: false,
-                deadline: block.timestamp + 60 days
-            });
+        uint32[] memory result = new uint32[](5);
+        for (uint8 i = 0; i < 5; i++) {
+            result[i] = i;
         }
 
-        return bountyArray;
+        return result;
     }
 
 }
