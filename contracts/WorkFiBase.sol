@@ -148,6 +148,8 @@ abstract contract WorkFiBase is IWorkFi /*, YieldLogic*/ {
     function _stableToNative(uint128 stableAmount, uint96 exchangeRate) internal pure returns (uint128) {
         return (stableAmount / 1 ether) * exchangeRate;
     }
+
+    //allow investors to withdraw their incentives per APY
         function withdraw(uint256 amount) external returns(bool) onlyInvestor(bountyId){
             require(investors[msg.sender] > 0,"only investors can withdraw");
            uint256 x = bounty.investors[msg.sender];
