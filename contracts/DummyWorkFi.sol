@@ -50,32 +50,32 @@ contract DummyWorkFi is IWorkFi {
     }
     function getOpenBounties() external pure override returns (uint32[] memory) {
         
-        uint32[] memory result = new uint32[](5);
-        for (uint8 i = 1; i < 5; i++) {
-            result[i] = i;
+        uint32[] memory result = new uint32[](4);
+        for (uint8 i = 0; i < 4; i++) {
+            result[i] = i + 1;
         }
 
         return result;
     }
 
-    function getOpenBounties(address recruiter) external view override returns (uint32[] memory) {
-        uint32[] memory result = new uint32[](5);
-        for (uint8 i = 1; i < 5; i++) {
-            result[i] = i;
+    function getOpenBounties(address recruiter) external pure override returns (uint32[] memory) {
+        uint32[] memory result = new uint32[](4);
+        for (uint8 i = 0; i < 4; i++) {
+            result[i] = i + 1;
         }
 
         return result;
     }
 
-    function getInvestedBounties(bool isOpen) external view override returns (uint32[] memory) {
+    function getInvestedBounties(bool isOpen) external pure override returns (uint32[] memory) {
 
         if (!isOpen) {
             return new uint32[](1);
         }
 
-        uint32[] memory result = new uint32[](5);
-        for (uint8 i = 1; i < 5; i++) {
-            result[i] = i;
+        uint32[] memory result = new uint32[](4);
+        for (uint8 i = 0; i < 4; i++) {
+            result[i] = i + 1;
         }
 
         return result;
