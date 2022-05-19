@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./IWorkFi.sol";
-import "./YieldLogic.sol";
+//import "./YieldLogic.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import { ISuperfluid, ISuperfluidToken } 
@@ -12,7 +12,7 @@ import { IInstantDistributionAgreementV1 }
 import { IDAv1Library } 
     from "@superfluid-finance/ethereum-contracts/contracts/apps/IDAv1Library.sol";
 
-abstract contract WorkFiBase is IWorkFi, YieldLogic {
+abstract contract WorkFiBase is IWorkFi /*, YieldLogic*/ {
 
     using IDAv1Library for IDAv1Library.InitData;
 
@@ -51,6 +51,12 @@ abstract contract WorkFiBase is IWorkFi, YieldLogic {
     modifier onlyWorker(uint32 bountyId) {
         require(msg.sender == bounties[bountyId].worker);
         _;
+    }
+
+    modifier onlyInvestor(uint32 bountyId){
+             require(msg.sender == bounties[bountyId].investor);
+        _;
+
     }
 
     function acceptWorker(
@@ -142,5 +148,16 @@ abstract contract WorkFiBase is IWorkFi, YieldLogic {
     function _stableToNative(uint128 stableAmount, uint96 exchangeRate) internal pure returns (uint128) {
         return (stableAmount / 1 ether) * exchangeRate;
     }
+        function withdraw(uint256 amount) external returns(bool) onlyInvestor(bountyId){
+            require(investors[msg.sender] > 0,"only investors can withdraw");
+           uint256 x = bounty.investors[msg.sender];
+            uint256 duration = bounty.timestamps[msg.sender];
+           uint256 reward = x * duration * APR / (num of seconds in a year);
+            (bool sent,) = payable(msg.sender).call{value: reward}("");
+            require(sent,"reward not sent:failed transaction");
+                return true;
+
+    }
+
 
 }
