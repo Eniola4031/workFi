@@ -43,16 +43,39 @@ contract DummyWorkFi is IWorkFi {
             nativeToken: 0x96B82B65ACF7072eFEb00502F45757F254c2a0D4,
             worker: address(0),
             recruiter: address(1),
-            isClosed: false,
+            isClosed: bountyId == 0,
             deadline: block.timestamp + 60 days
         });
 
     }
     function getOpenBounties() external pure override returns (uint32[] memory) {
         
-        uint32[] memory result = new uint32[](5);
-        for (uint8 i = 0; i < 5; i++) {
-            result[i] = i;
+        uint32[] memory result = new uint32[](4);
+        for (uint8 i = 0; i < 4; i++) {
+            result[i] = i + 1;
+        }
+
+        return result;
+    }
+
+    function getOpenBounties(address recruiter) external pure override returns (uint32[] memory) {
+        uint32[] memory result = new uint32[](4);
+        for (uint8 i = 0; i < 4; i++) {
+            result[i] = i + 1;
+        }
+
+        return result;
+    }
+
+    function getInvestedBounties(bool isOpen) external pure override returns (uint32[] memory) {
+
+        if (!isOpen) {
+            return new uint32[](1);
+        }
+
+        uint32[] memory result = new uint32[](4);
+        for (uint8 i = 0; i < 4; i++) {
+            result[i] = i + 1;
         }
 
         return result;

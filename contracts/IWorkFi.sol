@@ -57,4 +57,11 @@ interface IWorkFi {
     /// Get IDs of all open bounties
     function getOpenBounties() external view returns (uint32[] memory);
 
+    /// Get IDs of all open bounties created by a recruiter.
+    function getOpenBounties(address recruiter) external view returns (uint32[] memory);
+
+    /// Get IDs of all bounties investor has invested in.
+    /// @param isOpen Gets open bounties if set to true. Get closed bounties if set to false.
+    function getInvestedBounties(bool isOpen) external view returns (uint32[] memory);
+
 }
